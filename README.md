@@ -6,4 +6,4 @@ Pathogens of past and current infections have been identified directly by means 
 
 ## Data
 
-All data required to run the notebook is available [here](https://www.dropbox.com/sh/s7n7ndpfwni3ew1/AACMptMM6tkeUg5s4F7rTRhPa?dl=0).
+All data required to run the notebook is either available in the data folder or [here](https://clients.adaptivebiotech.com/pub/deneuter-2018-cmvserostatus).

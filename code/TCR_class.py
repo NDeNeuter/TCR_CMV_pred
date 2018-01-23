@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from collections import Counter
+from copy import deepcopy
 
 #############
 ## CLASSES ##
@@ -28,16 +29,45 @@ class TCR_Repertoire():
         return len(set(self.TCRs))
     
     
+    def __add__(self, other):
+        
+        """ Sum together counts of two repertoires for shared TCRs. """
+        
+        tcr_occurrence = {}
+        
+        rep = deepcopy(self)
+        
+        for tcr in rep.TCRs:
+            tcr_occurrence.setdefault(tcr, []).append(tcr)
+
+        for tcr in other.TCRs:
+            tcr_occurrence.setdefault(tcr, []).append(tcr)
+            
+        new_tcr_list = []
+        for nt_sequence, tcrs in tcr_occurrence.items():
+            if len(tcrs) > 1:
+                tcrs[0].read_count += tcrs[1].read_count
+                
+        return rep
+    
+                
     def add_TCR(self, tcr_instance):
         
         """ Add a TCR instance to the repertoire. """
         
         self.TCRs.append(tcr_instance)
         
+    
+    def get_unique_cdr3_sequences(self):
+        
+        """ Return list of all the unique CDR3 sequences in the repertoire. """
+        
+        cdr3_list = set([tcr.cdr3 for tcr in self.TCRs])
         
     def unique_cdr3_counts(self):
         
-        """ Return a dict of unique CDR3 sequences (keys) and how often they occur in the repertoire (value). """
+        """ Return a dict of unique CDR3 sequences (keys) and how often they occur in the repertoire (value).
+        In essence, how many distinct clonotypes have a specific CDR3 region. """
         
         cdr3_dict = {}
         for tcr in self.TCRs:
@@ -49,7 +79,8 @@ class TCR_Repertoire():
     
     def unique_cdr3_read_count(self):
         
-        """ Return a dict of unique CDR3 sequences (keys) and their total read count as observed in the repertoire (value). """
+        """ Return a dict of unique CDR3 sequences (keys) and their total read count as observed in the repertoire (value).
+        In essence, the sum of read counts for all clonotypes with a specific CDR3 region. """
         
         cdr3_read_dict = {}
         for tcr in self.TCRs:
@@ -98,8 +129,7 @@ class TCR():
     Takes as input:
     - dataline: a single (non-header) line from an ImmuneAccess datafile
     - filepath: path to the file containing the data (required for meta info)
-    - format: not all files from ImmuneAccess use the same format, use to specify which kind of format the file is in.
-    If using a new format -> add it to code in __init__ method. """
+    - format: not all files from ImmuneAccess use the same format, use to specify which kind of format the file is in. """
     
     def __init__(self, datadict, file_origin=None):
 
@@ -140,8 +170,8 @@ class TCR():
 
     def __eq__(self, other):
 
-        return '/'.join([self.v_max, self.cdr3, self.j_max]) == other.__repr__()
-        #return self.cdr3 == other.cdr3 and self.v_max == other.v_max and self.j_max == other.j_max
+        return self.nt_sequence == other.nt_sequence
+        #return '/'.join([self.v_max, self.cdr3, self.j_max]) == other.__repr__()
 
     
     def __ne__(self, other):
@@ -158,6 +188,11 @@ class TCR():
     def __repr__(self):
         
         return '/'.join([self.v_max, self.cdr3, self.j_max])
+    
+    
+    def __add__(self, other):
+        
+        return self.read_count + other.read_count
     
     
     def as_transaction(self, k_mer_length = 3):
@@ -271,9 +306,9 @@ def remove_cdr3_overlap(repertoire_A, repertoire_B):
     
     print('Number of unique CDR3 sequences in each repertoire:\n{}: {}\n{}: {}'\
           .format(repertoire_A.name, len(unique_cdr3_A), repertoire_B.name, len(unique_cdr3_B)))
-    
+
     overlapping_cdr3_seqs = [cdr3 for cdr3 in unique_cdr3_A if cdr3 in unique_cdr3_B]
-    
+
     print('Number of unique, shared CDR3 sequences between both repertoires: {}'.format(len(set(overlapping_cdr3_seqs))))
 
     print('Filtering {}'.format(repertoire_A.name))
